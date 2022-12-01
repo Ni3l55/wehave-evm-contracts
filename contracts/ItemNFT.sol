@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 
-contract ItemNFT is ERC721, Pausable, Ownable {
-    using Counters for Counters.Counter;
+contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
+    constructor() ERC1155("") {}
 
-    Counters.Counter private _tokenIdCounter;
-
-    constructor() ERC721("ItemNFT", "IT") {}
+    function setURI(string memory newuri) public onlyOwner {
+        _setURI(newuri);
+    }
 
     function pause() public onlyOwner {
         _pause();
@@ -21,18 +22,25 @@ contract ItemNFT is ERC721, Pausable, Ownable {
         _unpause();
     }
 
-    function safeMint(address to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
+    function mint(address account, uint256 id, uint256 amount, bytes memory data)
+        public
+        onlyOwner
+    {
+        _mint(account, id, amount, data);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 
-tokenId, uint256 batchSize)
+    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
+        public
+        onlyOwner
+    {
+        _mintBatch(to, ids, amounts, data);
+    }
+
+    function _beforeTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
         internal
         whenNotPaused
-        override
+        override(ERC1155, ERC1155Supply)
     {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 }
