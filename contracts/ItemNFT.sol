@@ -19,7 +19,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     uint256 public mintPrice = 800;
     uint256 public mintingFee = 40; // 5% fee on crowdfund
 
-    mapping(address => bool) verified;
+    mapping(address => bool) public verified;
     bool public pauseTransfers;
 
     constructor() ERC1155("") {
@@ -52,6 +52,8 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       public
       whenNotPaused
     {
+      require(id == 0); // Just 1 tier for now
+
       // Transfer USDC from the account to this contract
       uint256 price = amount * (mintPrice + mintingFee);
       usdc.transferFrom(msg.sender, address(this), price * 10 ** usdcDecimals);
