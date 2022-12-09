@@ -19,7 +19,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     uint256 public mintPrice = 800;
     uint256 public mintingFee = 40; // 5% fee on crowdfund
 
-    address[] public verified;
+    mapping(address => bool) verified;
     bool public pauseTransfers;
 
     constructor() ERC1155("") {
@@ -68,12 +68,16 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       mint(receiver, id, amount, "");
     }
 
+    function addressIsVerified(address account) public view returns (bool){
+      return verified[account];
+    }
+
     function addVerifiedAddress(address account) public onlyOwner {
-      verified.push(account);
+      verified[account] = true;
     }
 
     function removeVerifiedAddressAt(uint index) public onlyOwner {
-      delete verified[index];
+      delete verified[account] = false;
     }
 
     function togglePauseTransfers() public onlyOwner {
