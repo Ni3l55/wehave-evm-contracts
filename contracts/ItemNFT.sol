@@ -16,11 +16,15 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     USDC public usdc;
     uint256 constant usdcDecimals = 18;
 
-    uint256 public mintPrice = 600;
-    uint256 public mintingFee = 30; // 5% fee on crowdfund
+    uint256 public mintPrice = 800;
+    uint256 public mintingFee = 40; // 5% fee on crowdfund
+
+    address[] public verified;
+    bool public pauseTransfers;
 
     constructor() ERC1155("") {
       usdc = USDC(0x0FA8781a83E46826621b3BC094Ea2A0212e71B23);
+      pauseTransfers = false;
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -37,12 +41,16 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
         private
+        whenNotPaused
     {
+        // TODO check whitelisted
+
         _mint(account, id, amount, data);
     }
 
     function mintWithUSDC(uint256 id, uint256 amount)
       public
+      whenNotPaused
     {
       // Transfer USDC from the account to this contract
       uint256 price = amount * (mintPrice + mintingFee);
@@ -52,11 +60,32 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       mint(msg.sender, id, amount, "");
     }
 
+    function manualMint(address receiver, uint256 id, uint256 amount)
+      public
+      onlyOwner
+      whenNotPaused
+    {
+      mint(receiver, id, amount, "");
+    }
+
+    function addVerifiedAddress(address account) public onlyOwner {
+      verified.push(account);
+    }
+
+    function removeVerifiedAddressAt(uint index) public onlyOwner {
+      delete verified[index];
+    }
+
+    function togglePauseTransfers() public onlyOwner {
+      pauseTransfers = !pauseTransfers;
+    }
+
     function _beforeTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
         internal
         whenNotPaused
         override(ERC1155, ERC1155Supply)
     {
+        require(pauseTransfers == false);
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 }
