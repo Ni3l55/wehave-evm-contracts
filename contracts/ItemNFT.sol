@@ -22,9 +22,14 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     mapping(address => bool) public verified;
     bool public pauseTransfers;
 
+    mapping(uint256 => uint256) public maxSupply; // Maximum amount of supply per token
+    mapping(uint256 => uint256) public maxUserSupply; // Maximum amount of supply per user per token 
+
     constructor() ERC1155("") {
       usdc = USDC(0x0FA8781a83E46826621b3BC094Ea2A0212e71B23);
-      pauseTransfers = false;
+      pauseTransfers = true;
+      maxSupply[0] = 10;
+      maxUserSupply[0] = 3; // 1/3 max
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -39,12 +44,16 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
         _unpause();
     }
 
+    function setMaxSupply(uint256 id, uint256 max) public onlyOwner {
+      maxSupply[id] = max;
+    }
+
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
         private
         whenNotPaused
     {
-        // TODO check whitelisted
-        require(verified[account]);
+        require(id == 0, "Invalid token id."); // Just allow 1 tier for now
+        require(super.totalSupply(id) + amount <= maxSupply[id], "Not enough shares left.");  // Make shares not to go over supply
 
         _mint(account, id, amount, data);
     }
@@ -53,14 +62,15 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       public
       whenNotPaused
     {
-      require(id == 0); // Just 1 tier for now
+      // Subtract leftover if this exceeds total supply
+      uint256 validAmount = calculateValidAmount(id, amount);
 
       // Transfer USDC from the account to this contract
-      uint256 price = amount * (mintPrice + mintingFee);
+      uint256 price = validAmount * (mintPrice + mintingFee);
       usdc.transferFrom(msg.sender, address(this), price * 10 ** usdcDecimals);
 
       // Perform mint
-      mint(msg.sender, id, amount, "");
+      mint(msg.sender, id, validAmount, "");
     }
 
     function manualMint(address receiver, uint256 id, uint256 amount)
@@ -68,7 +78,17 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       onlyOwner
       whenNotPaused
     {
-      mint(receiver, id, amount, "");
+      uint256 validAmount = calculateValidAmount(id, amount);
+
+      mint(receiver, id, validAmount, "");
+    }
+
+    function calculateValidAmount(uint256 id, uint256 amount) private view returns (uint256) {
+      if (super.totalSupply(id) + amount > maxSupply[id]) {
+        return maxSupply[id] - super.totalSupply(id);
+      } else {
+        return amount;
+      }
     }
 
     function addressIsVerified(address account) public view returns (bool){
@@ -79,8 +99,8 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       verified[account] = true;
     }
 
-    function removeVerifiedAddressAt(uint index) public onlyOwner {
-      delete verified[account] = false;
+    function removeVerifiedAddress(address account) public onlyOwner {
+      verified[account] = false;
     }
 
     function togglePauseTransfers() public onlyOwner {
@@ -92,7 +112,16 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
         whenNotPaused
         override(ERC1155, ERC1155Supply)
     {
-        require(pauseTransfers == false);
+        require(verified[to], "This account is not verified (KYC)."); // Check if receiver is whitelisted
+        require(pauseTransfers == false || from == address(0), "Transfers are not allowed yet."); // Check if transfers are allowed, or it's a mint
+        
+        for (uint256 i = 0; i < ids.length; ++i) {
+                uint256 id = ids[i];
+                uint256 amount = amounts[i];
+                uint256 userBalance = super.balanceOf(to, id);
+                require((userBalance + amount) <= maxUserSupply[id], "Account is not allowed to own this much shares.");
+        }
+
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 }
