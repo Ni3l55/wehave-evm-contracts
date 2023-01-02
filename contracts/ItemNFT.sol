@@ -16,8 +16,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     USDC public usdc;
     uint256 constant usdcDecimals = 18;
 
-    uint256 public mintPrice = 800;
-    uint256 public mintingFee = 40; // 5% fee on crowdfund
+    uint256 public mintPrice = 416; // Includes share price, fee & maintenance advance
 
     mapping(address => bool) public verified;
     bool public pauseTransfers;
@@ -28,8 +27,8 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     constructor() ERC1155("") {
       usdc = USDC(0x0FA8781a83E46826621b3BC094Ea2A0212e71B23);
       pauseTransfers = true;
-      maxSupply[0] = 10;
-      maxUserSupply[0] = 3; // 1/3 max
+      maxSupply[0] = 2000;
+      maxUserSupply[0] = 666; // 1/3 max
     }
 
     function setURI(string memory newuri) public onlyOwner {
@@ -42,6 +41,10 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    function setMintPrice(uint256 newPrice) public onlyOwner {
+      mintPrice = newPrice;
     }
 
     function setMaxSupply(uint256 id, uint256 max) public onlyOwner {
@@ -58,7 +61,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     {
         require(id == 0, "Invalid token id."); // Just allow 1 tier for now
         require(amount > 0, "Can't mint 0 shares.");
-        require(super.totalSupply(id) + amount <= maxSupply[id], "Not enough shares left.");  // Make shares not to go over supply
+        require(super.totalSupply(id) + amount <= maxSupply[id], "Not enough shares left.");  // Make shares not go over supply
 
         _mint(account, id, amount, data);
     }
@@ -71,7 +74,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       uint256 validAmount = calculateValidAmount(id, amount);
 
       // Transfer USDC from the account to this contract
-      uint256 price = validAmount * (mintPrice + mintingFee);
+      uint256 price = validAmount * mintPrice;
       usdc.transferFrom(msg.sender, address(this), price * 10 ** usdcDecimals);
 
       // Perform mint
