@@ -89,6 +89,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     function calculateValidAmount(uint256 id, uint256 amount) private view returns (uint256) {
       if (super.totalSupply(id) + amount > maxSupply[id]) {
+        require(super.totalSupply(id) < maxSupply[id], "No more shares left.");
         return maxSupply[id] - super.totalSupply(id);
       } else {
         return amount;
