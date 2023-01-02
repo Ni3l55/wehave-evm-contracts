@@ -57,6 +57,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
         whenNotPaused
     {
         require(id == 0, "Invalid token id."); // Just allow 1 tier for now
+        require(amount > 0, "Can't mint 0 shares.");
         require(super.totalSupply(id) + amount <= maxSupply[id], "Not enough shares left.");  // Make shares not to go over supply
 
         _mint(account, id, amount, data);
