@@ -57,9 +57,8 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       maxUserSupply[id] = max;
     }
 
-    function withdrawBalance(address to) public onlyOwner {
-      uint256 balance = usdc.balanceOf(address(this));
-      usdc.transfer(to, balance);
+    function withdrawBalance(address to, uint256 amount) public onlyOwner {
+      usdc.transfer(to, amount);
     }
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
