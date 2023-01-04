@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 interface USDC {
   function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
   function balanceOf(address account) external view returns (uint256);
+  function transfer(address recipient, uint256 amount) external returns (bool);
 }
 
 contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
@@ -58,7 +59,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     function withdrawBalance(address to) public onlyOwner {
       uint256 balance = usdc.balanceOf(address(this));
-      usdc.transferFrom(address(this), to, balance);
+      usdc.transfer(to, balance);
     }
 
     function mint(address account, uint256 id, uint256 amount, bytes memory data)
