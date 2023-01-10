@@ -17,7 +17,6 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     USDC public usdc;
     uint256 constant usdcDecimals = 6;
-
     uint256 public mintPrice = 416; // Includes share price, fee & maintenance advance
 
     mapping(address => bool) public verified;
@@ -25,6 +24,8 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     mapping(uint256 => uint256) public maxSupply; // Maximum amount of supply per token
     mapping(uint256 => uint256) public maxUserSupply; // Maximum amount of supply per user per token 
+
+    uint256 amountIDs = 1;
 
     constructor() ERC1155("") {
       usdc = USDC(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
@@ -43,6 +44,14 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    function setUSDC(address newUSDC) public onlyOwner {
+      usdc = USDC(newUSDC);
+    }
+
+    function setAmountIDs(uint256 amount) public onlyOwner {
+      amountIDs = amount;
     }
 
     function setMintPrice(uint256 newPrice) public onlyOwner {
@@ -65,7 +74,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
         private
         whenNotPaused
     {
-        require(id == 0, "Invalid token id."); // Just allow 1 tier for now
+        require(id < amountIDs, "Invalid token id."); // Just allow 1 tier for now
         require(amount > 0, "Can't mint 0 shares.");
         require(super.totalSupply(id) + amount <= maxSupply[id], "Not enough shares left.");  // Make shares not go over supply
 
