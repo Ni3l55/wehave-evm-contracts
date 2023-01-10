@@ -16,7 +16,7 @@ interface USDC {
 contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
     USDC public usdc;
-    uint256 constant usdcDecimals = 18;
+    uint256 constant usdcDecimals = 6;
 
     uint256 public mintPrice = 416; // Includes share price, fee & maintenance advance
 
