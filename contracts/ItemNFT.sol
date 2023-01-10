@@ -27,7 +27,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
     mapping(uint256 => uint256) public maxUserSupply; // Maximum amount of supply per user per token 
 
     constructor() ERC1155("") {
-      usdc = USDC(0x0FA8781a83E46826621b3BC094Ea2A0212e71B23);
+      usdc = USDC(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174);
       pauseTransfers = true;
       maxSupply[0] = 2000;
       maxUserSupply[0] = 666; // 1/3 max
