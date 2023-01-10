@@ -87,6 +87,7 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       mint(msg.sender, id, validAmount, "");
     }
 
+    // For transfers paid with fiat
     function manualMint(address receiver, uint256 id, uint256 amount)
       public
       onlyOwner
@@ -95,6 +96,15 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
       uint256 validAmount = calculateValidAmount(id, amount);
 
       mint(receiver, id, validAmount, "");
+    }
+
+    // For accidents on manual mints :(
+    function manualBurn(address account, uint256 id, uint256 amount) 
+      public 
+      onlyOwner 
+      whenNotPaused  
+    {
+      _burn(account, id, amount);
     }
 
     function calculateValidAmount(uint256 id, uint256 amount) private view returns (uint256) {
@@ -128,13 +138,16 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
         override(ERC1155, ERC1155Supply)
     {
         require(verified[to], "This account is not verified (KYC)."); // Check if receiver is whitelisted
-        require(pauseTransfers == false || from == address(0), "Transfers are not allowed yet."); // Check if transfers are allowed, or it's a mint
+        require(pauseTransfers == false || from == address(0) || to == address(0), "Transfers are not allowed yet."); // Check if transfers are allowed, or it's a mint, or it's a burn
         
-        for (uint256 i = 0; i < ids.length; ++i) {
-                uint256 id = ids[i];
-                uint256 amount = amounts[i];
-                uint256 userBalance = super.balanceOf(to, id);
-                require((userBalance + amount) <= maxUserSupply[id], "Account is not allowed to own this much shares.");
+        // Check if user doesn't own too much shares. Null address can own any amount (burns)
+        if (to != address(0)) {
+            for (uint256 i = 0; i < ids.length; ++i) {
+                    uint256 id = ids[i];
+                    uint256 amount = amounts[i];
+                    uint256 userBalance = super.balanceOf(to, id);
+                    require((userBalance + amount) <= maxUserSupply[id], "Account is not allowed to own this much shares.");
+            }
         }
 
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
