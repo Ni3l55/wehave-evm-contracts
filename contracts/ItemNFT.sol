@@ -90,10 +90,10 @@ contract ItemNFT is ERC1155, Ownable, Pausable, ERC1155Burnable, ERC1155Supply {
 
       // Transfer USDC from the account to this contract
       uint256 price = validAmount * mintPrice;
-      usdc.transferFrom(msg.sender, address(this), price * 10 ** usdcDecimals);
-
-      // Perform mint
-      mint(msg.sender, id, validAmount, "");
+      if (usdc.transferFrom(msg.sender, address(this), price * 10 ** usdcDecimals)) {
+        // Perform mint
+        mint(msg.sender, id, validAmount, "");
+      }
     }
 
     // For transfers paid with fiat
